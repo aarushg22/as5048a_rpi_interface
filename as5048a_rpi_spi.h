@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <stdio.h>
+#include <unistd.h>
 
 #define AS5048_READ 0x4000
 #define AS5048_CMD_ANGLE 0x3FFF
