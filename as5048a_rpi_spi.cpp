@@ -39,9 +39,7 @@ As5048a::As5048a(int chip_select_spi, int frequency_divider) : csn(chip_select_s
   std::cout<<"Initialization done"<<'\n';
 }
 
-As5048a::~As5048a(){
-
-}
+As5048a::~As5048a(){}
 
 // Int to Char Buffer and Char buffer to int translators
 
@@ -91,6 +89,7 @@ int send_over_spi(int cmd, int nbytes){
 
 //The 15th bit(MSB) is always the parity bit with Even parity
 //Hence to insert or validate the parity bit
+
 int As5048a::EvenParityCalc(int value_16_bit) {
 
   int parity=0;
@@ -101,6 +100,10 @@ int As5048a::EvenParityCalc(int value_16_bit) {
   return parity;
 }
 
+float As5048::Degrees(int hex_value){
+  return ((float)hex_value * (360 / 0x4000))
+}
+
 const int As5048a::Read(int reg_address){
   int result;
   int cmd = reg_address | AS5048_READ;
@@ -108,7 +111,7 @@ const int As5048a::Read(int reg_address){
   cmd = (cmd | ((EvenParityCalc(cmd)<<15) & 0x8000));
 
   result = send_over_spi(cmd,2);
-  usleep(100);
+  usleep(1000);
   #ifdef DEBUG
     std::cout << "Result : 0x"<< std::hex << result << '\n';
   #endif
@@ -133,11 +136,12 @@ const int As5048a::Read(int reg_address){
     std::cout<<"Error flag set, stupid Magnetic Encoder chip, burn everything, burrrrrrrrnnnnnnnnnnnnnnn!!!"<< '\n';
     return -1;
   }
-  return result;
+
+  return (result & 0x3FFF);
 }
 int main(){
   int result=0;
-
+  float result_deg=0.0;
   /*!< 65536 = 3.814697260kHz on Rpi2, 6.1035156kHz on RPI3 */
   /*!< 32768 = 7.629394531kHz on Rpi2, 12.20703125kHz on RPI3 */
   /*!< 16384 = 15.25878906kHz on Rpi2, 24.4140625kHz on RPI3 */
@@ -155,20 +159,25 @@ int main(){
   /*!< 4 = 62.5MHz on Rpi2, 100MHz on RPI3. Dont expect this speed to work reliably. */
   /*!< 2 = 125MHz on Rpi2, 200MHz on RPI3, fastest you can get. Dont expect this speed to work reliably.*/
   /*!< 1 = 3.814697260kHz on Rpi2, 6.1035156kHz on RPI3, same as 0/65536 */
+  //128 tested, works fine, by default use 128
 
   As5048a chalega_kya(0,128);
+
+  //Clear any Error on initialization
   result=chalega_kya.Read(AS5048_CMD_CLEAR_ERROR);
   sleep(1);
-  result=chalega_kya.Read(AS5048_CMD_CLEAR_ERROR);
-  sleep(1);
+
+  //start read loop
   while(1) {
     result=chalega_kya.Read(AS5048_CMD_ANGLE);
     if(result==-1){
       result=chalega_kya.Read(AS5048_CMD_CLEAR_ERROR);
+      result_deg=chalega_kya.Degrees(result);
     }
     else{
-      std::cout << "Result : 0x"<< std::hex << result << '\n';
+      std::cout << "Result : 0x"<< std::hex << result << '\n' << "Result in degress : " << result_deg;
     }
+    // 0.4 sec delay between each read
     usleep(400000);
   }
   return 1;
