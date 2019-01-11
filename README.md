@@ -16,9 +16,9 @@ sudo make install
 
 ## Build and run
 
-While compiling you also need to link the bcm2835 library.
+While compiling you also need to link the bcm2835 library. You also need to link the `as5048a_rpi_spi.cpp` library to your code.
 
-`g++ my_example.cpp -lbcm2835 -o my_example_runnable`
+`g++ example.cpp as5048a_rpi_spi.cpp -lbcm2835 -o my_example_runnable`
 
 The bcm2835 modules need to be initialized with root access when running :
 
